@@ -1,7 +1,7 @@
 import { useApp } from "../store/AppContext";
 import { parseD, dday, fmtDate, fmtTime, todayStr } from "../lib/date";
 import {
-  Empty, EventRow, MemberChips, MonthLabel, PhotoGrid, SectionTitle, TripCard, Waves,
+  Empty, EventRow, MonthLabel, PhotoGrid, SectionTitle, TripCard, Waves,
 } from "../components/common";
 
 const listBox = "overflow-hidden rounded-[20px] bg-card divide-y divide-line";
@@ -54,8 +54,6 @@ export function HomeView() {
         )}
         <Waves />
       </section>
-
-      <MemberChips />
 
       <SectionTitle action="전체 보기" onAction={() => setTab("schedule")}>다가오는 일정</SectionTitle>
       {rest.length ? (
