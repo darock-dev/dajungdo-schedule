@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useApp } from "../store/AppContext";
+import { useApp, GUEST_MSG } from "../store/AppContext";
 import { COLORS, EVENT_EMOJI, TRIP_EMOJI } from "../lib/constants";
 import { fmtDate, fmtTime, dday, isPast } from "../lib/date";
 import { nickOf } from "../lib/members";
@@ -79,7 +79,7 @@ export function SheetLayer() {
 
 /* ---------- 사진 크게 보기 ---------- */
 function Lightbox({ id }) {
-  const { photos, canWrite, members, sheet, setSheet, closeSheet, deletePhoto } = useApp();
+  const { photos, canWrite, guest, members, sheet, setSheet, closeSheet, deletePhoto } = useApp();
   const p = photos.find(x => x.id === id);
   const src = useAssetSrc(p && p.asset);
   const [sure, setSure] = useState(false);
@@ -90,6 +90,7 @@ function Lightbox({ id }) {
   if (!p) return null;
 
   const remove = async () => {
+    if (guest) { window.alert(GUEST_MSG); return; }
     if (!sure) { setSure(true); return; }
     if (await deletePhoto(p)) goBack();
   };
@@ -122,7 +123,7 @@ function Lightbox({ id }) {
 
 /* ---------- 일정 상세 ---------- */
 function EventSheet({ id }) {
-  const { events, photos, canWrite, uid, members, openSheet, closeSheet, deleteEvent, saveReview, conn, uploadPhotos, uploading } = useApp();
+  const { events, photos, canWrite, guest, uid, members, openSheet, closeSheet, deleteEvent, saveReview, conn, uploadPhotos, uploading } = useApp();
   const [confirm, setConfirm] = useConfirm();
   const [reviewSure, setReviewSure] = useConfirm();
   const reviewRef = useRef(null);
@@ -148,6 +149,7 @@ function EventSheet({ id }) {
   ].filter(r => r[1]);
 
   const remove = async () => {
+    if (guest) { window.alert(GUEST_MSG); return; }
     if (!confirm) { setConfirm(true); return; }
     if (await deleteEvent(e.id)) closeSheet();
   };
@@ -192,7 +194,10 @@ function EventSheet({ id }) {
       </SectionTitle>
       {conn.assets ? (
         <div className="mb-3 flex items-center gap-3">
-          <label className={`${btnPrimary} relative inline-flex cursor-pointer items-center gap-1.5 overflow-hidden`}>
+          <label
+            className={`${btnPrimary} relative inline-flex cursor-pointer items-center gap-1.5 overflow-hidden`}
+            onClick={ev => { if (guest) { ev.preventDefault(); window.alert(GUEST_MSG); } }}
+          >
             📷 사진 올리기
             <input
               type="file"
@@ -344,7 +349,7 @@ function EventForm({ id }) {
 
 /* ---------- 여행지 추가/수정 ---------- */
 function TripForm({ id }) {
-  const { trips, saveTrip, deleteTrip, closeSheet, setTab, tab } = useApp();
+  const { trips, saveTrip, deleteTrip, closeSheet, setTab, tab, guest } = useApp();
   const [confirm, setConfirm] = useConfirm();
   const x = (id && trips.find(t => t.id === id)) || {};
   const [emoji, setEmoji] = useState(x.emoji || "🌸");
@@ -366,6 +371,7 @@ function TripForm({ id }) {
   };
 
   const remove = async () => {
+    if (guest) { window.alert(GUEST_MSG); return; }
     if (!confirm) { setConfirm(true); return; }
     if (await deleteTrip(id)) closeSheet();
   };

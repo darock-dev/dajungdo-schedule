@@ -11,6 +11,13 @@ export const useApp = () => useContext(Ctx);
 
 const NOT_LOADED = { members: false, events: false, trips: false, photos: false };
 
+/* 주소 뒤에 ?guest 를 붙이면 게스트 모드예요. 버튼은 그대로 보이고, 눌렀을 때 읽기만 가능하다고 알려줘요. */
+export const GUEST_MSG = "게스트 모드에선 읽기만 가능해요!";
+const WRITE_SHEETS = ["eventForm", "tripForm", "profile"];
+const isGuestUrl = () => {
+  try { return new URLSearchParams(window.location.search).has("guest"); } catch { return false; }
+};
+
 /** 공유 저장소(있으면) 또는 이 기기 저장소에 쓰고, 실시간 목록을 한곳에서 관리해요. */
 export function AppProvider({ children }) {
   const [conn, setConn] = useState({ db: null, assets: null, uid: null, canWrite: true, offline: false, mode: null, ready: false });
@@ -26,6 +33,7 @@ export function AppProvider({ children }) {
   const [toastState, setToastState] = useState(null);
   const timers = useRef({ slow: null, toast: null });
   const onboarded = useRef(false);
+  const [guest] = useState(isGuestUrl);
 
   const toast = useCallback(msg => {
     setToastState({ msg, key: Date.now() });
@@ -94,11 +102,11 @@ export function AppProvider({ children }) {
 
   /* 처음 들어왔는데 이름이 없으면 프로필부터 물어봐요 (한 번만) */
   useEffect(() => {
-    if (!onboarded.current && loaded.members && uid && canWrite && !members[uid] && !sheet) {
+    if (!onboarded.current && !guest && loaded.members && uid && canWrite && !members[uid] && !sheet) {
       onboarded.current = true;
       setSheet({ type: "profile", first: true });
     }
-  }, [loaded.members, members, uid, canWrite, sheet]);
+  }, [loaded.members, members, uid, canWrite, sheet, guest]);
 
   /* 시트가 열려 있을 때 뒤 화면 스크롤 막기 + Esc로 닫기 */
   useEffect(() => { document.body.style.overflow = sheet ? "hidden" : ""; }, [sheet]);
@@ -113,6 +121,7 @@ export function AppProvider({ children }) {
 
   /* ---------- 쓰기 ---------- */
   const write = useCallback(async (fn, okMsg) => {
+    if (guest) { window.alert(GUEST_MSG); return false; }
     try {
       await fn();
       if (okMsg) toast(okMsg);
@@ -125,7 +134,7 @@ export function AppProvider({ children }) {
       else toast("저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return false;
     }
-  }, [toast]);
+  }, [toast, guest]);
 
   const { db, assets } = conn;
 
@@ -189,6 +198,7 @@ export function AppProvider({ children }) {
 
   const uploadPhotos = async (files, eventId) => {
     if (!files.length) return;
+    if (guest) { window.alert(GUEST_MSG); return; }
     if (!assets) { toast("사진은 편집 권한이 있는 사람만 올릴 수 있어요."); return; }
     setUploading(files.length);
     let ok = 0;
@@ -211,12 +221,15 @@ export function AppProvider({ children }) {
     if (ok) toast(`사진 ${ok}장을 올렸어요.`);
   };
 
-  const openSheet = useCallback(s => setSheet(s), []);
+  const openSheet = useCallback(s => {
+    if (guest && WRITE_SHEETS.includes(s.type)) { window.alert(GUEST_MSG); return; }
+    setSheet(s);
+  }, [guest]);
   const closeSheet = useCallback(() => setSheet(null), []);
   const openLightbox = useCallback(id => setSheet(cur => ({ type: "lightbox", id, back: cur })), []);
 
   const value = {
-    conn, uid, canWrite, offline: conn.offline, mode: conn.mode,
+    conn, uid, canWrite, guest, offline: conn.offline, mode: conn.mode,
     members, events, trips, photos,
     slow, uploading, toastState, toast,
     tab, setTab, sheet, setSheet, openSheet, closeSheet, openLightbox,
