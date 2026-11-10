@@ -37,7 +37,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, setTab, uid, members, offline, mode, canWrite, slow, toastState, openSheet } = useApp();
+  const { tab, setTab, uid, members, offline, mode, canWrite, guest, slow, toastState, openSheet } = useApp();
   const current = TABS.find(t => t.id === tab) || TABS[0];
   const View = current.view;
 
@@ -71,6 +71,7 @@ function Shell() {
 
         <div>
           {mode === "local" && <Notice>이 기기(브라우저)에만 저장돼요.</Notice>}
+          {guest && <Notice>게스트 모드예요. 구경만 할 수 있어요.</Notice>}
           {slow && <Notice>데이터를 불러오는 데 시간이 걸리고 있어요. 보이는 내용이 최신이 아닐 수 있어요.</Notice>}
         </div>
 
